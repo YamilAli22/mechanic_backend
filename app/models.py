@@ -12,7 +12,7 @@ class RepairStatus(str, Enum):
     entregado = "entregado"
 
 class Mechanic(SQLModel, table=True):
-    id: UUID | None = Field(default_factory=uuid4, primary_key=True)
+    id: UUID = Field(default_factory=uuid4, primary_key=True)
     name: str = Field(index=True)
     phone: str = Field(index=True)
 
@@ -20,29 +20,29 @@ class Mechanic(SQLModel, table=True):
     
 
 class Client(SQLModel, table=True):
-    id: UUID | None = Field(default_factory=uuid4, primary_key=True)
+    id: UUID = Field(default_factory=uuid4, primary_key=True)
     name: str = Field(index=True)
     phone_number: str = Field(index=True)
     email: EmailStr = Field(index=True, max_length=255)
 
-    vehicles: List["Vehicle"] = Relationship(back_populates="clients")
+    vehicles: List["Vehicle"] = Relationship(back_populates="client")
 
 
 class Vehicle(SQLModel, table=True):
-    id: UUID | None = Field(default_factory=uuid4, primary_key=True)
-    license_plate: str | None = Field(index=True)
+    id: UUID = Field(default_factory=uuid4, primary_key=True)
+    license_plate: str = Field(index=True, unique=True)
     brand: str = Field(index=True)
     model: str = Field(index=True)
     year: int = Field(index=True)
 
     client_id: UUID = Field(foreign_key="client.id")
-    clients: Client | None = Relationship(back_populates="vehicles")
+    client: Client | None = Relationship(back_populates="vehicles")
 
     repairs: List["Repairs"] = Relationship(back_populates="vehicles")
 
 
 class Repairs(SQLModel, table=True):
-    id: UUID | None = Field(default_factory=uuid4, primary_key=True)
+    id: UUID = Field(default_factory=uuid4, primary_key=True)
     description: str = Field(index=True)
     status: RepairStatus = Field(index=True)
     start_date: datetime = Field(index=True)
@@ -58,7 +58,7 @@ class Repairs(SQLModel, table=True):
 
 
 class Record(SQLModel, table=True):
-    id: UUID | None = Field(default_factory=uuid4, primary_key=True)
+    id: UUID = Field(default_factory=uuid4, primary_key=True)
     date: datetime = Field(index=True)
     description: str = Field(index=True)
     status: str = Field(index=True)

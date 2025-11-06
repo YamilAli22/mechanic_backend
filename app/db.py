@@ -1,6 +1,8 @@
 from sqlmodel import Session, SQLModel, create_engine
-from fastapi import HTTPException, status
+from typing import Annotated
+from fastapi import Depends, HTTPException, status
 from schemas.client import ClientCreate
+from schemas.vehicle import VehicleCreate
 from models import Mechanic, Client, Vehicle, Repairs, Record
 
 sql_filename = "database.db"
@@ -16,6 +18,8 @@ def get_session():
     with Session(engine) as session:
         yield session
 
+SessionDep = Annotated[Session, Depends(get_session)]
+
 def save_client_in_db(client_data: ClientCreate, session: Session) -> Client:
     client = Client(
                     name=client_data.name,
@@ -26,6 +30,25 @@ def save_client_in_db(client_data: ClientCreate, session: Session) -> Client:
     session.commit()
     session.refresh(client)
     return client
+
+def save_vehicle_in_db(session: Session, vehicle_data: VehicleCreate) -> Vehicle:
+    client = session.get(Client, vehicle_data.client_id)
+    print(client)
+    if not client:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Client not found")
+    
+    vehicle = Vehicle(
+        license_plate=vehicle_data.license_plate,
+        brand=vehicle_data.brand,
+        model=vehicle_data.model,
+        year=vehicle_data.year,
+        client_id=vehicle_data.client_id
+    )
+
+    session.add(vehicle)
+    session.commit()
+    session.refresh(vehicle)
+    return vehicle
 
 
 

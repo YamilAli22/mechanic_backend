@@ -1,7 +1,19 @@
 from pydantic import BaseModel
+from uuid import UUID
 
-class Vehicle(BaseModel):
+class VehicleCreate(BaseModel):
     license_plate: str
     brand: str
     model: str
     year: int
+    client_id: UUID
+
+class VehicleRead(BaseModel):
+    id: UUID
+    license_plate: str
+    brand: str
+    model: str
+    year: int
+
+    class Config:
+        from_attributes = True
