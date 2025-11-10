@@ -3,13 +3,7 @@ from sqlmodel import Field, SQLModel, Relationship
 from uuid import UUID, uuid4
 from datetime import datetime
 from typing import List
-from enum import Enum
-
-class RepairStatus(str, Enum):
-    pendiente = "pendiente"
-    en_reparacion = "en_reparacion"
-    listo = "listo"
-    entregado = "entregado"
+from schemas.repairs import RepairStatus
 
 class Mechanic(SQLModel, table=True):
     id: UUID = Field(default_factory=uuid4, primary_key=True)
@@ -44,9 +38,9 @@ class Vehicle(SQLModel, table=True):
 class Repairs(SQLModel, table=True):
     id: UUID = Field(default_factory=uuid4, primary_key=True)
     description: str = Field(index=True)
-    status: RepairStatus = Field(index=True)
+    status: RepairStatus = Field(index=True, default=RepairStatus.pendiente)
     start_date: datetime = Field(index=True)
-    finish_date: datetime = Field(index=True)
+    finish_date: datetime = Field(index=True) 
 
     mechanic_id: UUID = Field(foreign_key="mechanic.id")
     mechanics: Mechanic | None = Relationship(back_populates="repairs")

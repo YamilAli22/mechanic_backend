@@ -13,7 +13,25 @@ Aplicación web para registrar vehiculos, clientes y reparaciones, llevar un reg
 
 ## Instalación y ejecución
 
-### TODO
+- Primero dirigirse a la carpeta donde se encuentra el proyecto y crear un entorno virtual:
+  ```bash
+  cd backend/app
+  python3 -m venv ./venv
+  source .venv/bin/activate
+  ```
+- Luego instalar las dependencias:
+  ```bash
+  pip3 install -r requirements.txt
+  ```
+- Levantar el servidor ubicado en taller/app:
+  ```bash
+  fastapi dev main.py
+  ```
+- También puede levantar el servidor recargable:
+  ```bash
+  uvicorn main:app --reload
+  ```
+- Puede probar la API en la documentacion de FastAPI con Swagger en *http://127.0.0.1:8000/docs*
 
 ---
 

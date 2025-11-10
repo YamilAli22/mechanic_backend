@@ -12,5 +12,6 @@ class ClientRead(BaseModel):
     phone_number: str
     email: EmailStr
 
-    class Config:
-        from_attributes = True # esto sirve para que la api me devuelva un JSON a partir de un objeto SQLModel
+    model_config = {
+        "from_attributes": True
+    } # esto sirve para que la api me devuelva un JSON a partir de un objeto SQLModel

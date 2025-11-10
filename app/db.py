@@ -1,8 +1,11 @@
 from sqlmodel import Session, SQLModel, create_engine
+from sqlalchemy.exc import IntegrityError
 from typing import Annotated
 from fastapi import Depends, HTTPException, status
 from schemas.client import ClientCreate
 from schemas.vehicle import VehicleCreate
+from schemas.repairs import RepairsCreate, RepairStatus
+from schemas.mechanic import MechanicCreate
 from models import Mechanic, Client, Vehicle, Repairs, Record
 
 sql_filename = "database.db"
@@ -20,6 +23,16 @@ def get_session():
 
 SessionDep = Annotated[Session, Depends(get_session)]
 
+def save_mechanic_in_db(session: Session, mechanic_data: MechanicCreate) -> Mechanic:
+    mechanic = Mechanic(
+        name=mechanic_data.name,
+        phone=mechanic_data.phone
+    )
+    session.add(mechanic)
+    session.commit()
+    session.refresh(mechanic)
+    return mechanic
+
 def save_client_in_db(client_data: ClientCreate, session: Session) -> Client:
     client = Client(
                     name=client_data.name,
@@ -31,9 +44,9 @@ def save_client_in_db(client_data: ClientCreate, session: Session) -> Client:
     session.refresh(client)
     return client
 
+
 def save_vehicle_in_db(session: Session, vehicle_data: VehicleCreate) -> Vehicle:
     client = session.get(Client, vehicle_data.client_id)
-    print(client)
     if not client:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Client not found")
     
@@ -46,9 +59,35 @@ def save_vehicle_in_db(session: Session, vehicle_data: VehicleCreate) -> Vehicle
     )
 
     session.add(vehicle)
-    session.commit()
+
+    try:
+        session.commit()
+    except IntegrityError:
+        session.rollback()
+        raise HTTPException(status_code=400, detail="License plate must be unique")
+    
     session.refresh(vehicle)
     return vehicle
+
+def save_repair_in_db(session: Session, repair_data: RepairsCreate) -> Repairs:
+    vehicle = session.get(Vehicle, repair_data.vehicle_id)
+    if not vehicle:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Vehicle not found")
+    
+    repair = Repairs(
+        description=repair_data.description,
+        status=RepairStatus.pendiente,
+        start_date=repair_data.start_date,
+        finish_date=repair_data.finish_date,
+        mechanic_id=repair_data.mechanic_id,
+        vehicle_id=repair_data.vehicle_id
+    )
+
+    session.add(repair)
+    session.commit()
+    session.refresh(repair)
+    return repair
+
 
 
 
