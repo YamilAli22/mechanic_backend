@@ -1,3 +1,4 @@
+from typing import Optional
 from pydantic import BaseModel
 from datetime import datetime
 from uuid import UUID
@@ -8,6 +9,10 @@ class RepairStatus(str, Enum):
     en_reparacion = "en_reparacion"
     listo = "listo"
     entregado = "entregado"
+
+class RepairsUpdate(BaseModel):
+    description: Optional[str] = None
+    status: Optional[RepairStatus] = None
 
 class RepairsCreate(BaseModel):
     description: str

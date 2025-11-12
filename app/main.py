@@ -1,9 +1,9 @@
 from contextlib import asynccontextmanager
-from typing import Optional
+from typing import Optional, Annotated
 from uuid import UUID
 from handlers import client_handler, vehicle_handler, repair_handler, mechanic_handler
 
-from fastapi import FastAPI, HTTPException, status
+from fastapi import FastAPI, HTTPException, Query, status, exceptions
 from db import *
 from schemas.client import *
 from schemas.vehicle import *
@@ -21,6 +21,8 @@ app = FastAPI(lifespan=lifespan)
 
 # endpoints
 
+# ============= MECHANICS =============
+
 @app.post("/mechanic/", response_model=MechanicRead, status_code=status.HTTP_201_CREATED)
 def create_mechanic(session: SessionDep, mechanic_data: MechanicCreate):
     try:
@@ -29,7 +31,6 @@ def create_mechanic(session: SessionDep, mechanic_data: MechanicCreate):
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                             detail=str(e))
     
-
 @app.get("/mechanic/{mechanic_id}", response_model=MechanicRead, status_code=status.HTTP_200_OK)
 async def search_mechanic(session: SessionDep, mechanic_id: UUID):
     try:
@@ -38,6 +39,18 @@ async def search_mechanic(session: SessionDep, mechanic_id: UUID):
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
     
+@app.get("/mechanic/", response_model=list[MechanicRead], status_code=status.HTTP_200_OK)
+async def list_or_search_mechanics(
+    session: SessionDep, 
+    q: Annotated[str | None, Query(min_length=2, description="Nombre del mecánico")] = None
+):
+    try:
+        mechanic =  await mechanic_handler.search_mechanics(session, q)
+        return mechanic
+    except Exception as e:
+        raise HTTPException(status_code=500, detail="Error al buscar mecánico")
+    
+# ============= CLIENTS =============
 
 @app.post("/clients/", response_model=ClientRead, status_code=status.HTTP_201_CREATED)
 def create_client(
@@ -50,7 +63,6 @@ def create_client(
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                             detail=str(e))
 
-    
 @app.get(
     "/clients/{client_id}", response_model=Optional[ClientRead], 
     status_code=status.HTTP_200_OK
@@ -62,16 +74,30 @@ async def search_client(session: SessionDep, client_id: UUID):
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
     
-
+# @app.get("/clients/", response_model=list[ClientRead], status_code=status.HTTP_200_OK)
+# async def list_clients(session: SessionDep):
+#     try:
+#         clients_list = await client_handler.get_clients_list(session)
+#         return clients_list
+#     except Exception as e:
+#         raise HTTPException(status_code=500, detail=str(e))
+    
 @app.get("/clients/", response_model=list[ClientRead], status_code=status.HTTP_200_OK)
-async def list_clients(session: SessionDep):
+async def list_or_search_clients(
+    session: SessionDep,
+    q: Annotated[str | None, Query(min_length=2, description="Nombre del cliente")] = None,
+    limit: int = Query(20, le=100)
+):
     try:
-        clients_list = await client_handler.get_clients_list(session)
-        return clients_list
+        clients = await client_handler.search_clients(session, q, limit)
+        return clients
+    except ValueError as e:
+        raise HTTPException(status_code=500, detail=f"Datos inválidos: {str(e)}")
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
     
-    
+# ============= VEHICLES =============
+
 @app.post("/vehicles/", response_model=VehicleRead, status_code=status.HTTP_201_CREATED)
 def create_vehicle(
     session: SessionDep,
@@ -83,32 +109,36 @@ def create_vehicle(
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                             detail=str(e))
 
-
 @app.get(
-    "/clients/{client_id}/vehicles/", response_model=list[VehicleRead], 
+    "/vehicles/{vehicle_id}", response_model=VehicleRead, 
     status_code=status.HTTP_200_OK
 )
-async def search_client_vehicles(session: SessionDep, client_id: UUID):
+async def search_client_vehicles(session: SessionDep, vehicle_id: UUID):
     try:
-        vehicles_list = await vehicle_handler.get_client_vehicles(session, client_id)
+        vehicles_list = await vehicle_handler.get_vehicle(session, vehicle_id)
         return vehicles_list
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
     
-
 @app.get(
-    "/clients/{client_id}/vehicles/{license_plate}", response_model=VehicleRead, 
+    "/vehicles/", response_model=list[VehicleRead], 
     status_code=status.HTTP_200_OK
 )
-async def search_vehicle_by_code(session: SessionDep, client_id: UUID, license_plate: str):
+async def search_or_list_vehicles(
+    session: SessionDep,
+    q: Annotated[str | None, Query(min_length=2, description="Nombre del cliente")] = None,
+    license_plate: Annotated[str | None, Query(min_length=3, description="Patente")] = None,
+    limit: int = Query(20, le=100)
+):
     try:
-        vehicle_data = await vehicle_handler.get_vehicle_data(session, client_id, license_plate)
+        vehicle_data = await vehicle_handler.get_vehicle_data(session, q, license_plate, limit)
         return vehicle_data
-    except Exception as e:
+    except exceptions.ResponseValidationError as e:
         raise HTTPException(status_code=500, detail=str(e))
     
+# ============= REPAIRS =============
     
-@app.post("/vehicles/repairs/", response_model=RepairsRead, status_code=status.HTTP_201_CREATED)
+@app.post("/repairs/", response_model=RepairsRead, status_code=status.HTTP_201_CREATED)
 def create_repair(session: SessionDep, repair_data: RepairsCreate):
     try:
         return save_repair_in_db(session, repair_data)
@@ -116,22 +146,35 @@ def create_repair(session: SessionDep, repair_data: RepairsCreate):
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                             detail=str(e))
     
-    
-@app.get("/vehicles/repairs/{repair_id}", response_model=RepairsRead, status_code=status.HTTP_200_OK)
+@app.get("/repairs/{repair_id}", response_model=RepairsRead, status_code=status.HTTP_200_OK)
 async def search_for_repair(session: SessionDep, repair_id: UUID):
     try:
         repair_data = await repair_handler.get_repair_data(session, repair_id)
         return repair_data
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
-
     
-@app.patch("/vehicles/repairs/{repair_id}", response_model=RepairsRead, status_code=status.HTTP_200_OK)
-async def update_repair_info(session: SessionDep, repair_id: UUID, status: RepairStatus, info: RepairsCreate):
+@app.get("/repairs/", response_model=list[RepairsRead], status_code=status.HTTP_200_OK)
+async def search_or_list_repairs(
+    session: SessionDep,
+    license_plate: Annotated[str | None, Query(min_length=3, description="Patente")] = None,
+    client_name: Annotated[str | None, Query(min_length=2, description="Nombre del cliente")] = None,
+    status: Annotated[RepairStatus | None, Query(description="Estado de la reparación")] = None,
+    limit: int = Query(20, le=100)
+):
     try:
-        updated_data = await repair_handler.update_info(session, repair_id, status, info)
+        repairs = await repair_handler.get_repairs(session, license_plate, client_name, status, limit)
+        return repairs
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.patch("/repairs/{repair_id}", response_model=RepairsRead, status_code=status.HTTP_200_OK)
+async def update_repair_info(session: SessionDep, repair_id: UUID, update: RepairsUpdate):
+    try:
+        updated_data = await repair_handler.update_info(session, repair_id, update)
         return updated_data
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+
     
 
