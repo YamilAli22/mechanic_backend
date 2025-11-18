@@ -1,9 +1,11 @@
 from uuid import UUID
+from fastapi import Depends
+from typing import Annotated
 from models import Vehicle, Client
-from sqlmodel import select
-from db import SessionDep
+from sqlmodel import select, Session 
+from db import SessionDep, get_session
 
-async def get_vehicle(session: SessionDep, vehicle_id: UUID) -> Vehicle:
+async def get_vehicle_data(session: Annotated[Session, Depends(get_session)], vehicle_id: UUID) -> Vehicle | None:
     try:
         vehicle = session.exec(select(Vehicle).filter(Vehicle.id == vehicle_id)).one_or_none()
         if vehicle:
@@ -12,8 +14,8 @@ async def get_vehicle(session: SessionDep, vehicle_id: UUID) -> Vehicle:
     finally:
         session.close()
 
-async def get_vehicle_data(
-        session: SessionDep, 
+async def search_vehicles(
+        session: Annotated[Session, Depends(get_session)], 
         q: str | None, 
         vehicle_code: str | None, 
         limit: int = 20
@@ -27,9 +29,9 @@ async def get_vehicle_data(
         conditions = []
 
         if q:
-            conditions.append(Client.name.ilike(f"%{q}%"))
+            conditions.append(Client.name.ilike(f"%{q}%")) # type: ignore
         if vehicle_code:
-            conditions.append(Vehicle.license_plate.ilike(f"%{vehicle_code}%"))
+            conditions.append(Vehicle.license_plate.ilike(f"%{vehicle_code}%")) # type: ignore
         
         if conditions:
             query = query.where(*conditions) # -> el * desempaqueta lo que hay en la lista

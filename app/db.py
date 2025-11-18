@@ -6,7 +6,7 @@ from schemas.client import ClientCreate
 from schemas.vehicle import VehicleCreate
 from schemas.repairs import RepairsCreate, RepairStatus
 from schemas.mechanic import MechanicCreate
-from models import Mechanic, Client, Vehicle, Repairs, Record
+from models import Mechanic, Client, Vehicle, Repairs
 
 sql_filename = "database.db"
 sql_url = f"sqlite:///{sql_filename}"
