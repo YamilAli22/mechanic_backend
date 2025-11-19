@@ -2,13 +2,14 @@ from pydantic import EmailStr
 from sqlmodel import Field, SQLModel, Relationship
 from uuid import UUID, uuid4
 from datetime import datetime
-from typing import List
+from typing import List, Optional
 from schemas.repairs import RepairStatus
 
 class Mechanic(SQLModel, table=True):
     id: UUID = Field(default_factory=uuid4, primary_key=True)
     name: str = Field(index=True)
     phone: str = Field(index=True)
+    deleted_at: Optional[datetime] = Field(default=None, nullable=True)
 
     repairs: List["Repairs"] = Relationship(back_populates="mechanics")
     
@@ -18,6 +19,7 @@ class Client(SQLModel, table=True):
     name: str = Field(index=True)
     phone_number: str = Field(index=True)
     email: EmailStr = Field(index=True, max_length=255)
+    deleted_at: Optional[datetime] = Field(default=None, nullable=True)
 
     vehicles: List["Vehicle"] = Relationship(back_populates="client")
 
@@ -28,6 +30,7 @@ class Vehicle(SQLModel, table=True):
     brand: str = Field(index=True)
     model: str = Field(index=True)
     year: int = Field(index=True)
+    deleted_at: Optional[datetime] = Field(default=None, nullable=True)
 
     client_id: UUID = Field(foreign_key="client.id")
     client: Client | None = Relationship(back_populates="vehicles")
@@ -41,6 +44,7 @@ class Repairs(SQLModel, table=True):
     status: RepairStatus = Field(index=True, default=RepairStatus.pendiente)
     start_date: datetime = Field(index=True)
     finish_date: datetime = Field(index=True) 
+    deleted_at: Optional[datetime] = Field(default=None, nullable=True)
 
     mechanic_id: UUID = Field(foreign_key="mechanic.id")
     mechanics: Mechanic | None = Relationship(back_populates="repairs")

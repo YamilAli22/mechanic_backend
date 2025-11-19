@@ -1,3 +1,4 @@
+from typing import Optional
 from pydantic import BaseModel
 from uuid import UUID
 
@@ -19,3 +20,9 @@ class VehicleRead(BaseModel):
     model_config = {
         "from_attributes": True
     }
+
+class VehicleUpdate(BaseModel):
+    license_plate: Optional[str] = None
+    brand: Optional[str] = None
+    model: Optional[str] = None
+    year: Optional[int] = None

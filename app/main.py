@@ -2,6 +2,8 @@ from contextlib import asynccontextmanager
 from typing import Optional, Annotated
 from uuid import UUID
 from handlers import client_handler, vehicle_handler, repair_handler, mechanic_handler
+from schemas import client
+from schemas import vehicle
 from sqlmodel import Session
 from fastapi import FastAPI, HTTPException, Query, status, exceptions, Depends
 from db import *
@@ -49,7 +51,29 @@ async def list_or_search_mechanics(
         return mechanic
     except Exception as e:
         raise HTTPException(status_code=500, detail="Error al buscar mecánico")
-    
+
+@app.patch("/mechanic/{mechanic_id}", response_model=MechanicRead, status_code=status.HTTP_200_OK)
+async def update_mechanic_data(
+    session: Annotated[Session, Depends(get_session)],
+    mechanic_id: UUID,
+    update: MechanicUpdate
+):
+    try:
+        updated_mechanic = await mechanic_handler.update_mechanic(session, mechanic_id, update)
+        return updated_mechanic
+    except Exception:
+        raise HTTPException(status_code=500, detail="Error en la actualización")
+
+@app.delete("/mechanic/{mechanic_id}", status_code=status.HTTP_204_NO_CONTENT)
+async def soft_delete_mechanic(
+    session: Annotated[Session, Depends(get_session)],
+    mechanic_id: UUID
+):
+    try:
+        await mechanic_handler.delete_mechanic(session, mechanic_id) 
+    except Exception:
+        raise HTTPException(status_code=500, detail="Error borrando datos")
+
 # ============= CLIENTS =============
 
 @app.post("/clients/", response_model=ClientRead, status_code=status.HTTP_201_CREATED)
@@ -87,7 +111,29 @@ async def list_or_search_clients(
         raise HTTPException(status_code=500, detail=f"Datos inválidos: {str(e)}")
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
-    
+
+@app.patch("/clients/{client_id}", response_model=ClientRead, status_code=status.HTTP_200_OK)
+async def update_client_data(
+    session: Annotated[Session, Depends(get_session)],
+    client_id: UUID,
+    update: ClientUpdate 
+):
+    try:
+        updated_client = await client_handler.update_client(session, client_id, update)
+        return updated_client 
+    except Exception:
+        raise HTTPException(status_code=500, detail="Error en la actualización")
+
+@app.delete("/client/{client_id}", status_code=status.HTTP_204_NO_CONTENT)
+async def soft_delete_client(
+    session: Annotated[Session, Depends(get_session)],
+    client_id: UUID
+):
+    try:
+        await client_handler.delete_client(session, client_id) 
+    except Exception:
+        raise HTTPException(status_code=500, detail="Error borrando datos")
+
 # ============= VEHICLES =============
 
 @app.post("/vehicles/", response_model=VehicleRead, status_code=status.HTTP_201_CREATED)
@@ -128,6 +174,30 @@ async def search_or_list_vehicles(
     except exceptions.ResponseValidationError as e:
         raise HTTPException(status_code=500, detail=str(e))
     
+@app.patch("/vehicles/{vehicle_id}", response_model=VehicleRead, status_code=status.HTTP_200_OK)
+async def update_vehicle_data(
+    session: Annotated[Session, Depends(get_session)],
+    vehicle_id: UUID,
+    update: VehicleUpdate 
+):
+    try:
+        updated_vehicle = await vehicle_handler.update_vehicle(session, vehicle_id, update)
+        return updated_vehicle 
+    except Exception:
+        raise HTTPException(status_code=500, detail="Error en la actualización")
+
+
+@app.delete("/vehicles/{vehicle_id}", status_code=status.HTTP_204_NO_CONTENT)
+async def soft_delete_vehicle(
+    session: Annotated[Session, Depends(get_session)],
+    vehicle_id: UUID
+):
+    try:
+        await vehicle_handler.delete_vehicle(session, vehicle_id) 
+    except Exception:
+        raise HTTPException(status_code=500, detail="Error borrando datos")
+
+        
 # ============= REPAIRS =============
     
 @app.post("/repairs/", response_model=RepairsRead, status_code=status.HTTP_201_CREATED)
@@ -169,4 +239,15 @@ async def update_repair_info(session: Annotated[Session, Depends(get_session)], 
         raise HTTPException(status_code=500, detail=str(e))
 
     
+@app.delete("/repairs/{repair_id}", status_code=status.HTTP_204_NO_CONTENT)
+async def soft_delete_repair(
+    session: Annotated[Session, Depends(get_session)],
+    repair_id: UUID
+):
+    try:
+        await repair_handler.delete_repair(session, repair_id) 
+    except Exception:
+        raise HTTPException(status_code=500, detail="Error borrando datos")
+
+        
 
