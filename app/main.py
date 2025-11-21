@@ -2,8 +2,6 @@ from contextlib import asynccontextmanager
 from typing import Optional, Annotated
 from uuid import UUID
 from handlers import client_handler, vehicle_handler, repair_handler, mechanic_handler
-from schemas import client
-from schemas import vehicle
 from sqlmodel import Session
 from fastapi import FastAPI, HTTPException, Query, status, exceptions, Depends
 from db import *
