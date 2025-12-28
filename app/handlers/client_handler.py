@@ -1,19 +1,20 @@
 from datetime import datetime, timezone
 from uuid import UUID
-from typing import Annotated
+from typing import Annotated, Sequence
 from fastapi import Depends, HTTPException
-from models import Client
-from schemas.client import ClientRead, ClientUpdate
+
+from app.models import Client
+from app.schemas.client import ClientUpdate
 from sqlmodel import select, Session
-from db import get_session
+from app.db import get_session
 
 async def get_client_data(client_id: UUID, session: Annotated[Session, Depends(get_session)]) -> Client | None:
-    data = session.exec(select(Client).filter(Client.id == client_id)).one_or_none()
+    data = session.exec(select(Client).where(Client.id == client_id)).one_or_none()
     if data:
         return data
     return None
 
-async def search_clients(session: Annotated[Session, Depends(get_session)], q: str | None = None, limit: int = 20) -> list[Client]:
+async def search_clients(session: Annotated[Session, Depends(get_session)], q: str | None = None, limit: int = 20) -> Sequence[Client]:
     query = select(Client).where(Client.deleted_at==None)
 
     if q:
@@ -23,7 +24,7 @@ async def search_clients(session: Annotated[Session, Depends(get_session)], q: s
     clients = session.exec(query).all()
     return clients
 
-async def update_client(session: Annotated[Session, Depends(get_session)], client_id: UUID, update: ClientUpdate) -> ClientRead:
+async def update_client(session: Annotated[Session, Depends(get_session)], client_id: UUID, update: ClientUpdate) -> Client:
     query = select(Client).where(Client.id==client_id, Client.deleted_at==None)
     client = session.exec(query).first()
 

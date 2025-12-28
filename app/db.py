@@ -2,11 +2,11 @@ from sqlmodel import Session, SQLModel, create_engine
 from sqlalchemy.exc import IntegrityError
 from typing import Annotated
 from fastapi import Depends, HTTPException, status
-from schemas.client import ClientCreate
-from schemas.vehicle import VehicleCreate
-from schemas.repairs import RepairsCreate, RepairStatus
-from schemas.mechanic import MechanicCreate
-from models import Mechanic, Client, Vehicle, Repairs
+from app.schemas.client import ClientCreate
+from app.schemas.vehicle import VehicleCreate
+from app.schemas.repairs import RepairsCreate, RepairStatus
+from app.schemas.mechanic import MechanicCreate
+from app.models import Mechanic, Client, Vehicle, Repairs
 
 sql_filename = "database.db"
 sql_url = f"sqlite:///{sql_filename}"
@@ -26,6 +26,8 @@ SessionDep = Annotated[Session, Depends(get_session)]
 def save_mechanic_in_db(session: Session, mechanic_data: MechanicCreate) -> Mechanic:
     mechanic = Mechanic(
         name=mechanic_data.name,
+        email=mechanic_data.email,
+        password=mechanic_data.password, # HASHEAR ESTO
         phone=mechanic_data.phone
     )
     session.add(mechanic)

@@ -12,7 +12,7 @@ class RepairStatus(str, Enum):
 
 class RepairsUpdate(BaseModel):
     description: Optional[str] = None
-    status: Optional[RepairStatus] = None
+    status: RepairStatus
 
 class RepairsCreate(BaseModel):
     description: str

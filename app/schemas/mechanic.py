@@ -1,9 +1,11 @@
 from typing import Optional
-from pydantic import BaseModel
+from pydantic import BaseModel, EmailStr
 from uuid import UUID
 
 class MechanicCreate(BaseModel):
     name: str
+    email: EmailStr
+    password: str
     phone: str
 
 class MechanicRead(BaseModel):

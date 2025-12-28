@@ -1,19 +1,18 @@
 from datetime import datetime, timezone
 from uuid import UUID
-from typing import Annotated
-from models import Mechanic
-from schemas.mechanic import MechanicUpdate
+from typing import Annotated, Sequence
+from app.models import Mechanic
+from app.schemas.mechanic import MechanicUpdate
 from sqlmodel import select, Session
 from fastapi import Depends, HTTPException
-from db import get_session
+from app.db import get_session
 
 async def get_mechanic_data(session: Annotated[Session, Depends(get_session)], mechanic_id: UUID) -> Mechanic | None:   
-    data = session.exec(select(Mechanic).filter(Mechanic.id==mechanic_id)).one_or_none()
-    if data:
-        return data
-    return None
+    data = session.exec(select(Mechanic).where(Mechanic.id==mechanic_id)).one_or_none()
+    return data
+
   
-async def search_mechanics(session:  Annotated[Session, Depends(get_session)], q: str | None = None) -> list[Mechanic]:
+async def search_mechanics(session:  Annotated[Session, Depends(get_session)], q: str | None = None) -> Sequence[Mechanic]:
     query = select(Mechanic).where(Mechanic.deleted_at == None)
 
     if q:

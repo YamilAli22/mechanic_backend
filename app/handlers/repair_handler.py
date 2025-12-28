@@ -1,17 +1,15 @@
 from datetime import datetime, timezone
 from uuid import UUID
 from fastapi import HTTPException, Depends
-from schemas.repairs import RepairsUpdate, RepairStatus
-from models import Repairs, Vehicle, Client
+from app.schemas.repairs import RepairsUpdate, RepairStatus
+from app.models import Repairs, Vehicle, Client
 from sqlmodel import select, Session
-from typing import Annotated
-from db import get_session
+from typing import Annotated, Sequence
+from app.db import get_session
 
 async def get_repair_data(session: Annotated[Session, Depends(get_session)], repair_id: UUID) -> Repairs | None:
-    data = session.exec(select(Repairs).filter(Repairs.id==repair_id)).one_or_none()
-    if data:
-        return data
-    return None
+    data = session.exec(select(Repairs).where(Repairs.id==repair_id)).one_or_none()
+    return data
 
 async def search_repairs(
         session: Annotated[Session, Depends(get_session)], 
@@ -19,7 +17,7 @@ async def search_repairs(
         client_name: str | None = None,
         status: RepairStatus | None = None,
         limit: int = 20
-) -> list[Repairs]:
+) -> Sequence[Repairs]:
     if not license_plate and not client_name:
         return []
         
@@ -36,13 +34,13 @@ async def search_repairs(
     if conditions:
         query = query.where(*conditions)
         
-    query = query.order_by(Repairs.created_at.desc()).limit(limit)
+    query = query.order_by(str(Repairs.start_date)).limit(limit)
     result = session.exec(query).all()
     return result
 
 async def update_info(session: Annotated[Session, Depends(get_session)], repair_id: UUID, update: RepairsUpdate) -> Repairs:
     query = select(Repairs).where(Repairs.id==repair_id, Repairs.deleted_at==None)
-    repair = session.exec(repair).first()
+    repair = session.exec(query).first()
 
     if not repair:
         raise HTTPException(status_code=404, detail="Repair not found")

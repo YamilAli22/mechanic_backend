@@ -1,21 +1,23 @@
 from contextlib import asynccontextmanager
-from typing import Optional, Annotated
+from typing import Optional, Annotated, Dict
 from uuid import UUID
-from handlers import client_handler, vehicle_handler, repair_handler, mechanic_handler
 from sqlmodel import Session
-from fastapi import FastAPI, HTTPException, Query, status, exceptions, Depends
-from db import *
-from schemas.client import *
-from schemas.vehicle import *
-from schemas.repairs import *
-from schemas.mechanic import *
+from fastapi import FastAPI, Depends, HTTPException, Query, status, exceptions
+
+from app.handlers import client_handler, vehicle_handler, repair_handler, mechanic_handler
+from app.db import *
+from app.schemas.client import *
+from app.schemas.vehicle import *
+from app.schemas.repairs import *
+from app.schemas.mechanic import *
+from app.auth.auth_handler import sign_jwt
 
 # esto deberia ejecutarse antes de que la app empieze a recibir requests
 # es decir, lo primero que quiero hacer es crear la base de datos
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     create_db_and_tables()
-    yield # deberia ir algo luego de este yield?
+    yield
 
 app = FastAPI(lifespan=lifespan)
 
@@ -23,15 +25,16 @@ app = FastAPI(lifespan=lifespan)
 
 # ============= MECHANICS =============
 
-@app.post("/mechanic/", response_model=MechanicRead, status_code=status.HTTP_201_CREATED)
+@app.post("/mechanic/signup", tags=["Mechanics"], response_model=Dict[str, str], status_code=status.HTTP_201_CREATED)
 def create_mechanic(session: Annotated[Session, Depends(get_session)], mechanic_data: MechanicCreate):
     try:
-        return save_mechanic_in_db(session, mechanic_data)
+        mechanic = save_mechanic_in_db(session, mechanic_data)
+        return sign_jwt(mechanic.email)
     except Exception as e:
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                             detail=str(e))
     
-@app.get("/mechanic/{mechanic_id}", response_model=MechanicRead, status_code=status.HTTP_200_OK)
+@app.get("/mechanic/{mechanic_id}", tags=["Mechanics"], response_model=MechanicRead, status_code=status.HTTP_200_OK)
 async def search_mechanic_by_id(session: Annotated[Session, Depends(get_session)], mechanic_id: UUID):
     try:
         mechanic_data = await mechanic_handler.get_mechanic_data(session, mechanic_id)
@@ -39,7 +42,7 @@ async def search_mechanic_by_id(session: Annotated[Session, Depends(get_session)
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
     
-@app.get("/mechanic/", response_model=list[MechanicRead], status_code=status.HTTP_200_OK)
+@app.get("/mechanic/", tags=["Mechanics"], response_model=list[MechanicRead], status_code=status.HTTP_200_OK)
 async def list_or_search_mechanics(
     session: Annotated[Session, Depends(get_session)], 
     q: Annotated[str | None, Query(min_length=2, description="Nombre del mecánico")] = None
@@ -50,7 +53,7 @@ async def list_or_search_mechanics(
     except Exception as e:
         raise HTTPException(status_code=500, detail="Error al buscar mecánico")
 
-@app.patch("/mechanic/{mechanic_id}", response_model=MechanicRead, status_code=status.HTTP_200_OK)
+@app.patch("/mechanic/{mechanic_id}", tags=["Mechanics"], response_model=MechanicRead, status_code=status.HTTP_200_OK)
 async def update_mechanic_data(
     session: Annotated[Session, Depends(get_session)],
     mechanic_id: UUID,
@@ -62,7 +65,7 @@ async def update_mechanic_data(
     except Exception:
         raise HTTPException(status_code=500, detail="Error en la actualización")
 
-@app.delete("/mechanic/{mechanic_id}", status_code=status.HTTP_204_NO_CONTENT)
+@app.delete("/mechanic/{mechanic_id}", tags=["Mechanics"], status_code=status.HTTP_204_NO_CONTENT)
 async def soft_delete_mechanic(
     session: Annotated[Session, Depends(get_session)],
     mechanic_id: UUID

@@ -3,11 +3,13 @@ from sqlmodel import Field, SQLModel, Relationship
 from uuid import UUID, uuid4
 from datetime import datetime
 from typing import List, Optional
-from schemas.repairs import RepairStatus
+from app.schemas.repairs import RepairStatus
 
 class Mechanic(SQLModel, table=True):
     id: UUID = Field(default_factory=uuid4, primary_key=True)
     name: str = Field(index=True)
+    email: EmailStr = Field(index=True, max_length=255)
+    password: str = Field(index=True)
     phone: str = Field(index=True)
     deleted_at: Optional[datetime] = Field(default=None, nullable=True)
 
@@ -40,7 +42,7 @@ class Vehicle(SQLModel, table=True):
 
 class Repairs(SQLModel, table=True):
     id: UUID = Field(default_factory=uuid4, primary_key=True)
-    description: str = Field(index=True)
+    description: Optional[str] = Field(index=True, default=None)
     status: RepairStatus = Field(index=True, default=RepairStatus.pendiente)
     start_date: datetime = Field(index=True)
     finish_date: datetime = Field(index=True) 

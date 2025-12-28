@@ -1,24 +1,22 @@
 from datetime import datetime, timezone
 from uuid import UUID
 from fastapi import Depends, HTTPException
-from typing import Annotated
-from models import Vehicle, Client
-from schemas.vehicle import VehicleRead, VehicleUpdate
+from typing import Annotated, Sequence
+from app.models import Vehicle, Client
+from app.schemas.vehicle import VehicleRead, VehicleUpdate
 from sqlmodel import select, Session 
-from db import get_session
+from app.db import get_session
 
 async def get_vehicle_data(session: Annotated[Session, Depends(get_session)], vehicle_id: UUID) -> Vehicle | None:
-    vehicle = session.exec(select(Vehicle).filter(Vehicle.id == vehicle_id)).one_or_none()
-    if vehicle:
-        return vehicle
-    return None
+    vehicle = session.exec(select(Vehicle).where(Vehicle.id == vehicle_id)).one_or_none()
+    return vehicle
 
 async def search_vehicles(
         session: Annotated[Session, Depends(get_session)], 
         q: str | None, 
         vehicle_code: str | None, 
         limit: int = 20
-) -> list[Vehicle]:
+) -> Sequence[Vehicle]:
     if not q and not vehicle_code:
         return []
         
@@ -54,7 +52,7 @@ async def update_vehicle(session: Annotated[Session, Depends(get_session)], vehi
     session.commit()
     session.refresh(vehicle)
 
-    return vehicle 
+    return vehicle # type: ignore 
 
 async def delete_vehicle(session: Annotated[Session, Depends(get_session)], vehicle_id: UUID):
     vehicle = session.get(Vehicle, vehicle_id)
