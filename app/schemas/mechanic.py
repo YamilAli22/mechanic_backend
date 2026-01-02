@@ -7,6 +7,7 @@ class MechanicCreate(BaseModel):
     email: EmailStr
     password: str
     phone: str
+    registration_code: str
 
 class MechanicRead(BaseModel):
     id: UUID

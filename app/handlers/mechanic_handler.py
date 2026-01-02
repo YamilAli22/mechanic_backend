@@ -3,7 +3,7 @@ from uuid import UUID
 from typing import Annotated, Sequence
 
 from app.models import Mechanic
-from app.schemas.mechanic import MechanicUpdate, MechanicLogin
+from app.schemas.mechanic import MechanicUpdate 
 from sqlmodel import select, Session
 from fastapi import Depends, HTTPException
 from app.db import get_session
