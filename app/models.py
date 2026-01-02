@@ -8,7 +8,7 @@ from app.schemas.repairs import RepairStatus
 class Mechanic(SQLModel, table=True):
     id: UUID = Field(default_factory=uuid4, primary_key=True)
     name: str = Field(index=True)
-    email: EmailStr = Field(index=True, max_length=255)
+    email: EmailStr = Field(unique=True, index=True, max_length=255)
     password: str = Field(index=True)
     phone: str = Field(index=True)
     deleted_at: Optional[datetime] = Field(default=None, nullable=True)

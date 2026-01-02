@@ -1,6 +1,7 @@
 from contextlib import asynccontextmanager
 from typing import Optional, Annotated, Dict
 from uuid import UUID
+from fastapi.security import OAuth2PasswordRequestForm
 from sqlmodel import Session
 from fastapi import FastAPI, Depends, HTTPException, Query, status, exceptions
 
@@ -10,7 +11,7 @@ from app.schemas.client import *
 from app.schemas.vehicle import *
 from app.schemas.repairs import *
 from app.schemas.mechanic import *
-from app.auth.auth_handler import sign_jwt
+from app.auth.auth_handler import TokenResponse, get_current_mechanic, sign_jwt
 
 # esto deberia ejecutarse antes de que la app empieze a recibir requests
 # es decir, lo primero que quiero hacer es crear la base de datos
@@ -25,15 +26,41 @@ app = FastAPI(lifespan=lifespan)
 
 # ============= MECHANICS =============
 
-@app.post("/mechanic/signup", tags=["Mechanics"], response_model=Dict[str, str], status_code=status.HTTP_201_CREATED)
+@app.post("/mechanic/signup", tags=["Mechanics"], response_model=TokenResponse, status_code=status.HTTP_201_CREATED)
 def create_mechanic(session: Annotated[Session, Depends(get_session)], mechanic_data: MechanicCreate):
     try:
         mechanic = save_mechanic_in_db(session, mechanic_data)
-        return sign_jwt(mechanic.email)
+        token = sign_jwt(mechanic)
+
+        return {
+            "access_token": token,
+            "token_type": "bearer",
+            "mechanic": mechanic
+        }
+
     except Exception as e:
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                             detail=str(e))
-    
+
+@app.post("/mechanic/login", tags=["Mechanics"], response_model=TokenResponse, status_code=status.HTTP_202_ACCEPTED)
+async def mechanic_login(session: Annotated[Session, Depends(get_session)], form_data: Annotated[OAuth2PasswordRequestForm, Depends()]):
+    mechanic = await mechanic_handler.check_mechanic(session, form_data.username, form_data.password)
+    if not mechanic:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED,
+                            detail="Incorrect Creds",
+                            headers={"WWW-Authenticate": "Bearer"}) 
+    token = sign_jwt(mechanic)
+
+    return {
+        "access_token": token,
+        "token_type": "bearer",
+        "mechanic": mechanic
+    }
+
+@app.get("/mechanic/me", tags=["Mechanics"], response_model=MechanicRead, status_code=status.HTTP_200_OK)
+async def read_mechanics_me(current_mechanic: Annotated[MechanicRead, Depends(get_current_mechanic)]):
+    return current_mechanic
+
 @app.get("/mechanic/{mechanic_id}", tags=["Mechanics"], response_model=MechanicRead, status_code=status.HTTP_200_OK)
 async def search_mechanic_by_id(session: Annotated[Session, Depends(get_session)], mechanic_id: UUID):
     try:

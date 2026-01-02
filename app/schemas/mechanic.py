@@ -10,6 +10,7 @@ class MechanicCreate(BaseModel):
 
 class MechanicRead(BaseModel):
     id: UUID
+    email: EmailStr
     name: str
     phone: str
  
@@ -17,6 +18,12 @@ class MechanicRead(BaseModel):
         'from_attributes': True
     }
 
+class MechanicLogin(BaseModel):
+    email: EmailStr
+    password: str
+
 class MechanicUpdate(BaseModel):
     name: Optional[str] = None
+    email: Optional[EmailStr] = None
+    password: Optional[str] = None
     phone: Optional[str] = None
