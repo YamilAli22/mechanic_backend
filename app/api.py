@@ -211,6 +211,15 @@ async def search_or_list_vehicles(
     except exceptions.ResponseValidationError as e:
         raise HTTPException(status_code=500, detail=str(e))
 
+@app.get("/clients/{client_id}/vehicles/", tags=["Vehicles"], response_model=list[VehicleRead], status_code=status.HTTP_200_OK)
+async def get_vehicles_of_client(
+    session: Annotated[Session, Depends(get_session)],
+    auth_mechanic: Annotated[Mechanic, Depends(get_current_mechanic)],
+    client_id: UUID
+):
+    vehicles_of_client = await vehicle_handler.get_client_vehicles(session, client_id)
+    return vehicles_of_client
+
 @app.patch("/vehicles/{vehicle_id}", tags=["Vehicles"], response_model=VehicleRead, status_code=status.HTTP_200_OK)
 async def update_vehicle_data(
     session: Annotated[Session, Depends(get_session)],
@@ -282,6 +291,16 @@ async def get_repairs_record(session: Annotated[Session, Depends(get_session)],
 ):
     vehicle_repairs = await repair_handler.get_record_of_repairs(session, vehicle_id)
     return vehicle_repairs
+
+@app.get("/mechanics/{mechanic_id}/repairs/", tags=["Repairs"], description="Get repairs assigned to a mechanic",
+         response_model=list[RepairsRead], status_code=status.HTTP_200_OK)
+async def get_repairs_mechanic(session: Annotated[Session, Depends(get_session)], 
+                             auth_mechanic: Annotated[Mechanic, Depends(get_current_mechanic)],
+                             mechanic_id: UUID
+):
+    mechanic_repairs = await repair_handler.get_mechanic_repairs(session, mechanic_id)
+    return mechanic_repairs
+
 
 @app.patch("/repairs/{repair_id}", tags=["Repairs"], response_model=RepairsRead, status_code=status.HTTP_200_OK)
 async def update_repair_info(session: Annotated[Session, Depends(get_session)], 

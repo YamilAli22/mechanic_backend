@@ -47,6 +47,14 @@ async def get_record_of_repairs(session: Annotated[Session, Depends(get_session)
 
     return result
 
+async def get_mechanic_repairs(session: Annotated[Session, Depends(get_session)], mechanic_id: UUID) -> Sequence[Repairs]:
+    query = select(Repairs).where(
+        Repairs.deleted_at==None,
+        Repairs.mechanic_id==mechanic_id
+    )
+    result = session.exec(query).all()
+    return result
+
 async def update_info(session: Annotated[Session, Depends(get_session)], repair_id: UUID, update: RepairsUpdate) -> Repairs:
     query = select(Repairs).where(Repairs.id==repair_id, Repairs.deleted_at==None)
     repair = session.exec(query).first()

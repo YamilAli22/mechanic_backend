@@ -3,6 +3,7 @@ from uuid import UUID
 from fastapi import Depends, HTTPException
 from typing import Annotated, Sequence
 from app.models import Vehicle, Client
+from app.schemas import vehicle
 from app.schemas.vehicle import VehicleRead, VehicleUpdate
 from sqlmodel import select, Session 
 from app.db import get_session
@@ -36,8 +37,15 @@ async def search_vehicles(
     result = session.exec(query).all()
     return result
 
+async def get_client_vehicles(session: Annotated[Session, Depends(get_session)], client_id: UUID) -> Sequence[Vehicle]:
+    query = select(Vehicle).where(
+        Vehicle.deleted_at==None,
+        Vehicle.client_id==client_id
+    )
+    result = session.exec(query).all()
+    return result
             
-async def update_vehicle(session: Annotated[Session, Depends(get_session)], vehicle_id: UUID, update: VehicleUpdate) -> VehicleRead:
+async def update_vehicle(session: Annotated[Session, Depends(get_session)], vehicle_id: UUID, update: VehicleUpdate) -> Vehicle:
     query = select(Vehicle).where(Vehicle.id==vehicle_id, Vehicle.deleted_at==None)
     vehicle = session.exec(query).first()
 
