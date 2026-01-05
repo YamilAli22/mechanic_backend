@@ -1,3 +1,4 @@
+from uuid import UUID
 from sqlmodel import Session, SQLModel, create_engine
 from sqlalchemy.exc import IntegrityError
 from typing import Annotated
@@ -53,8 +54,8 @@ def save_client_in_db(client_data: ClientCreate, session: Session) -> Client:
     return client
 
 
-def save_vehicle_in_db(session: Session, vehicle_data: VehicleCreate) -> Vehicle:
-    client = session.get(Client, vehicle_data.client_id)
+def save_vehicle_in_db(session: Session, vehicle_data: VehicleCreate, client_id: UUID) -> Vehicle:
+    client = session.get(Client, client_id)
     if not client:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Client not found")
     
@@ -63,7 +64,7 @@ def save_vehicle_in_db(session: Session, vehicle_data: VehicleCreate) -> Vehicle
         brand=vehicle_data.brand,
         model=vehicle_data.model,
         year=vehicle_data.year,
-        client_id=vehicle_data.client_id
+        client_id=client_id
     )
 
     session.add(vehicle)
@@ -77,8 +78,8 @@ def save_vehicle_in_db(session: Session, vehicle_data: VehicleCreate) -> Vehicle
     session.refresh(vehicle)
     return vehicle
 
-def save_repair_in_db(session: Session, repair_data: RepairsCreate) -> Repairs:
-    vehicle = session.get(Vehicle, repair_data.vehicle_id)
+def save_repair_in_db(session: Session, repair_data: RepairsCreate, mechanic_id: UUID, vehicle_id: UUID) -> Repairs:
+    vehicle = session.get(Vehicle, vehicle_id)
     if not vehicle:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Vehicle not found")
     
@@ -87,8 +88,8 @@ def save_repair_in_db(session: Session, repair_data: RepairsCreate) -> Repairs:
         status=RepairStatus.pendiente,
         start_date=repair_data.start_date,
         finish_date=repair_data.finish_date,
-        mechanic_id=repair_data.mechanic_id,
-        vehicle_id=repair_data.vehicle_id
+        mechanic_id=mechanic_id,
+        vehicle_id=vehicle_id
     )
 
     session.add(repair)

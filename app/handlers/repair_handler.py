@@ -26,7 +26,7 @@ async def search_repairs(
     conditions = []
 
     if license_plate:
-        conditions.append(Vehicle.model.ilike(f"%{license_plate}%")) # type: ignore
+        conditions.append(Vehicle.license_plate.ilike(f"%{license_plate}%")) # type: ignore
     if client_name:
         conditions.append(Client.name.ilike(f"%{client_name}%")) # type: ignore
     if status:
@@ -36,6 +36,15 @@ async def search_repairs(
         
     query = query.order_by(str(Repairs.start_date)).limit(limit)
     result = session.exec(query).all()
+    return result
+
+async def get_record_of_repairs(session: Annotated[Session, Depends(get_session)], vehicle_id: UUID) -> Sequence[Repairs]:
+    query = select(Repairs).where(
+        Repairs.deleted_at==None,
+        Repairs.vehicle_id==vehicle_id
+    )
+    result = session.exec(query).all()
+
     return result
 
 async def update_info(session: Annotated[Session, Depends(get_session)], repair_id: UUID, update: RepairsUpdate) -> Repairs:

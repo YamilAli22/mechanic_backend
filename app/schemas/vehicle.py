@@ -7,7 +7,6 @@ class VehicleCreate(BaseModel):
     brand: str
     model: str
     year: int
-    client_id: UUID
 
 class VehicleRead(BaseModel):
     id: UUID

@@ -5,10 +5,10 @@ from uuid import UUID
 from enum import Enum
 
 class RepairStatus(str, Enum):
-    pendiente = "pendiente"
-    en_reparacion = "en_reparacion"
-    listo = "listo"
-    entregado = "entregado"
+    pendiente = "pending"
+    en_reparacion = "in repair"
+    listo = "ready"
+    entregado = "delivered"
 
 class RepairsUpdate(BaseModel):
     description: Optional[str] = None
@@ -18,9 +18,6 @@ class RepairsCreate(BaseModel):
     description: str
     start_date: datetime
     finish_date: datetime
-
-    mechanic_id: UUID
-    vehicle_id: UUID
 
 class RepairsRead(BaseModel):
     id: UUID

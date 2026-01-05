@@ -171,17 +171,14 @@ async def soft_delete_client(
 
 # ============= VEHICLES =============
 
-@app.post("/vehicles/", tags=["Vehicles"], response_model=VehicleRead, status_code=status.HTTP_201_CREATED)
-def create_vehicle(
+@app.post("/clients/{client_id}/vehicles/", tags=["Vehicles"], response_model=VehicleRead, status_code=status.HTTP_201_CREATED)
+def create_vehicle_for_client(
     session: Annotated[Session, Depends(get_session)],
     auth_mechanic: Annotated[Mechanic, Depends(get_current_mechanic)],
+    client_id: UUID,
     vehicle_data: VehicleCreate
 ):
-    try:
-        return save_vehicle_in_db(session, vehicle_data)
-    except Exception as e:
-        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                            detail=str(e))
+    return save_vehicle_in_db(session, vehicle_data, client_id)
 
 @app.get(
     "/vehicles/{vehicle_id}", tags=["Vehicles"], response_model=VehicleRead, 
@@ -213,7 +210,7 @@ async def search_or_list_vehicles(
         return vehicle_data
     except exceptions.ResponseValidationError as e:
         raise HTTPException(status_code=500, detail=str(e))
-    
+
 @app.patch("/vehicles/{vehicle_id}", tags=["Vehicles"], response_model=VehicleRead, status_code=status.HTTP_200_OK)
 async def update_vehicle_data(
     session: Annotated[Session, Depends(get_session)],
@@ -242,16 +239,14 @@ async def soft_delete_vehicle(
         
 # ============= REPAIRS =============
     
-@app.post("/repairs/", tags=["Repairs"], response_model=RepairsRead, status_code=status.HTTP_201_CREATED)
+@app.post("/vehicle/{mechanic_id}/{vehicle_id}/repairs/", tags=["Repairs"], response_model=RepairsRead, status_code=status.HTTP_201_CREATED)
 def create_repair(session: Annotated[Session, Depends(get_session)], 
                   auth_mechanic: Annotated[Mechanic, Depends(get_current_mechanic)],
+                  mechanic_id: UUID,
+                  vehicle_id: UUID,
                   repair_data: RepairsCreate
 ):
-    try:
-        return save_repair_in_db(session, repair_data)
-    except Exception as e:
-        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                            detail=str(e))
+    return save_repair_in_db(session, repair_data, mechanic_id, vehicle_id)
     
 @app.get("/repairs/{repair_id}", tags=["Repairs"], response_model=RepairsRead, status_code=status.HTTP_200_OK)
 async def search_repair_by_id(session: Annotated[Session, Depends(get_session)], 
@@ -268,9 +263,9 @@ async def search_repair_by_id(session: Annotated[Session, Depends(get_session)],
 async def search_or_list_repairs(
     session: Annotated[Session, Depends(get_session)],
     auth_mechanic: Annotated[Mechanic, Depends(get_current_mechanic)],
-    license_plate: Annotated[str | None, Query(min_length=3, description="Patente")] = None,
-    client_name: Annotated[str | None, Query(min_length=2, description="Nombre del cliente")] = None,
-    status: Annotated[RepairStatus | None, Query(description="Estado de la reparación")] = None,
+    license_plate: Annotated[str | None, Query(min_length=3, description="License plate")] = None,
+    client_name: Annotated[str | None, Query(min_length=2, description="Client name")] = None,
+    status: Annotated[RepairStatus | None, Query(description="Repair status")] = None,
     limit: int = Query(20, le=100)
 ):
     try:
@@ -278,6 +273,15 @@ async def search_or_list_repairs(
         return repairs
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+
+@app.get("/vehicles/{vehicle_id}/repairs/", tags=["Repairs"], description="Get record of repairs from a vehicle",
+         response_model=list[RepairsRead], status_code=status.HTTP_200_OK)
+async def get_repairs_record(session: Annotated[Session, Depends(get_session)], 
+                             auth_mechanic: Annotated[Mechanic, Depends(get_current_mechanic)],
+                             vehicle_id: UUID
+):
+    vehicle_repairs = await repair_handler.get_record_of_repairs(session, vehicle_id)
+    return vehicle_repairs
 
 @app.patch("/repairs/{repair_id}", tags=["Repairs"], response_model=RepairsRead, status_code=status.HTTP_200_OK)
 async def update_repair_info(session: Annotated[Session, Depends(get_session)], 
