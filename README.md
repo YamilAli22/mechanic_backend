@@ -1,81 +1,171 @@
-# Sistema de Gestión de Taller Mecánico
+# API de un Sistema de Gestión de Taller Mecánico
 
-Aplicación web para registrar vehiculos, clientes y reparaciones, llevar un registro de los mismos y permitir al cliente realizar un seguimiento sobre el estado de su vehiculo.
+Sistema de gestión para talleres mecánicos con autenticación JWT y manejo completo de operaciones para mecánicos, clientes, vehículos y reparaciones
+
+---
+## 🚀 Features principales 
+
+- ✅ Autenticación JWT para mecánicos
+- ✅ CRUD completo: Mecánicos, Clientes, Vehículos, Reparaciones
+- ✅ Gestión de estados de reparación
+- ✅ Historial de reparaciones por vehículo
+- ✅ Soft delete en todas las entidades
+- ✅ Documentación interactiva (Swagger)
 
 ---
 
-## Stack tecnológico:
-- **Python 3.12**
-- **FastAPI**
-- **SQL**
+## 🛠️ Tech Stack
+
+- **FastAPI** - Framework web moderno y rápido para Python
+- **SQLModel** - ORM basado en Pydantic y SQLAlchemy
+- **SQLite** - Base de datos (futura migración a PostgreSQL)
+- **JWT** - Autenticación con tokens
+- **Bcrypt** - Hash de contraseñas
 
 ---
 
-## Instalación y ejecución
+## ⚙️ Instalación y ejecución
 
-- Primero dirigirse a la carpeta donde se encuentra el proyecto y crear un entorno virtual:
-  ```bash
-  cd backend/app
-  python3 -m venv ./venv
-  source .venv/bin/activate
-  ```
-- Luego instalar las dependencias:
-  ```bash
-  pip3 install -r requirements.txt
-  ```
-- Levantar el servidor ubicado en taller/app:
-  ```bash
-  fastapi dev main.py
-  ```
-- También puede levantar el servidor recargable:
-  ```bash
-  uvicorn main:app --reload
-  ```
-- Puede probar la API en la documentacion de FastAPI con Swagger en *http://127.0.0.1:8000/docs*
+```bash 
+# Clonar repo
+git clone https://github.com/tu-usuario/taller-api.git
+cd taller-api
+
+# Crear y activar entorno virtual 
+python3 -m venv ./venv
+source .venv/bin/activate # Linux/Mac
+# venv\Scripts\activate # Windows
+
+# Instalar dependencias
+pip3 install -r requirements.txt
+
+# Configurar variables de entorno (ver sección Configuración)
+cp .env.example .env # Editar con tus valores
+
+```
 
 ---
+
+## 🚀 Uso 
+```bash
+# Ejecutar el servidor
+python3 main.py 
+
+# O con uvicorn 
+uvicorn app.api:app --reload
+```
+
+La API se encuentra disponible en `http://localhost:8000`
+
+## 📚 Documentación
+
+- **Swagger UI**: http://localhost:8000/docs
+- **ReDoc**: http://localhost:8000/redoc
+
+## 🔑 Autenticación
+
+### Registro de mecánico 
+```bash
+curl -X POST "http://localhost:8000/mechanic/signup" \ 
+    - H "Content-Type: application/json" \ 
+    -d '{
+        "name": "Juan Pérez",
+        "email": juan@taller.com",
+        "password": "password123",
+        "phone": "123456789",
+        "registration_code": "secret_code"
+    }'
+```
+### Login
+```bash
+curl -X POST "http://localhost:8000/mechanic/login" \
+  -H "Content-Type: application/x-www-form-urlencoded" \
+  -d "username=juan@taller.com&password=contraseña123"
+```
+
+Respuesta:
+```json
+{
+    "access_token":"eyJhbGciOiJIUzI1NiIsInR...",
+    "token_type":"bearer",
+    "mechanic": {"id":"...","email":"...","name":"...","phone":"..."}
+}
+```
+
+### Usar el token
+```bash
+curl -X GET "http://localhost:8000/mechanic/me" \
+  -H "Authorization: Bearer YOUR_TOKEN_HERE"
+```
+
+## 📊 Ejemplos de uso
+
+### Crear cliente
+```bash
+curl -X POST "http://localhost:8000/client/" \
+  -H "Authorization: Bearer TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "name": "Carlos López",
+    "phone_number": "987654321",
+    "email": "carlos@email.com"
+  }'
+```
+
+### Crear vehículo
+```bash
+curl -X POST "http://localhost:8000/vehicles" \
+  -H "Authorization: Bearer TOKEN" \
+  -d '{
+    "license_plate": "ABC123",
+    "brand": "Toyota",
+    "model": "Corolla",
+    "year": 2020,
+    "client_id": "CLIENT_UUID"
+  }'
+```
+
+### Ver historial de reparaciones
+```bash
+curl -X GET "http://localhost:8000/vehicles/{vehicle_id}/repairs" \
+  -H "Authorization: Bearer TOKEN"
+```
+
+## 🏗️ Arquitectura
+```
+taller/
+├── app/
+│   ├── api.py              # Endpoints principales
+│   ├── db.py               # Configuración de base de datos
+│   ├── models.py           # Modelos SQLModel
+│   ├── auth/
+│   │   ├── auth_handler.py # JWT encoding/decoding
+│   │   ├── security.py     # Hashing de contraseñas
+│   │
+│   ├── handlers/           # Lógica de negocio
+│   └── schemas/            # Pydantic schemas
+├── main.py                 # Entry point
+├── .env                    # Variables de entorno
+└── requirements.txt
+```
+
+## 🔐 Seguridad
+
+- Contraseñas hasheadas con bcrypt
+- Autenticación JWT con expiración (15 min)
+- Registro protegido con código de invitación
+- Soft delete para preservar integridad referencial
+
+## 🧪 Tests
+```bash
+pytest
+```
+
+## 🚀 Deploy
+
+[Instrucciones de deploy - agregar después]
 
 ### Notas
 
 - Usamos SQLModel, que funciona junto con Pydantic y SQLAlchemy, para crear modelos (clases) que representan las tablas y relaciones que se crearan en la base de datos.
 - Y utilizamos modelos Pydantic para validar los datos que recibe y devuelve la API y que estos se adapten correctamente a los modelos que definimos con SQLModel.
-
-Ejemplo:
-
-```python
-
-# MODELO PYDANTIC:
-
-from pydantic import BaseModel, EmailStr
-from uuid import UUID
-
-class ClientCreate(BaseModel):
-    name: str
-    phone_number: str
-    email: EmailStr
-
-class ClientRead(BaseModel):
-    id: UUID
-    name: str
-    phone_number: str
-    email: EmailStr
-
-    class Config:
-        from_attributes = True
-
-# OBJETO SQLMODEL:
-
-class Client(SQLModel, table=True):
-    id: UUID | None = Field(default_factory=uuid4, primary_key=True)
-    name: str = Field(index=True)
-    phone_number: str = Field(index=True)
-    email: EmailStr = Field(index=True, max_length=255)
-
-    vehicles: List["Vehicle"] = Relationship(back_populates="clients")
-```
-
-Lo primero que vemos en el código de arriba, es un modelo pydantic que será utilizado por la API
-al recibir y devolver datos, y luego nuestro modelo SQL que representa la tabla que se creara 
-en la base de datos. La clase ```Config``` sirve para que FastAPI convierta un objeto SQLModel
-en un JSON, por ejemplo, cuando queremos devolver los datos del cliente luego de crearlo con un 
-POST request.

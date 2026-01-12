@@ -53,7 +53,6 @@ async def get_current_mechanic(session: Annotated[Session, Depends(get_session)]
         headers={"WWW-Authenticate": "Bearer"},
     )
     payload = decode_jwt(token)
-    print(payload)
     if not payload:
         raise HTTPException(status_code=401)
 
@@ -61,7 +60,6 @@ async def get_current_mechanic(session: Annotated[Session, Depends(get_session)]
     if not mechanic_id:
         raise credentials_exception
    
-    print(mechanic_id)
     mechanic = session.exec(select(Mechanic).where(Mechanic.id==mechanic_id)).one_or_none()
     if not mechanic or mechanic.deleted_at is not None:
         raise credentials_exception
