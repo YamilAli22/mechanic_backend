@@ -46,6 +46,32 @@ cp .env.example .env # Editar con tus valores
 
 ---
 
+## 🔧 Configuración
+
+Crear un archivo `.env` en la raíz del proyecto con las siguientes variables:
+```bash
+# Clave secreta para JWT (genera una aleatoria con: python -c "import secrets; print(secrets.token_urlsafe(32))")
+secret=tu_clave_secreta_super_larga_aqui
+
+# Algoritmo de encriptación JWT
+algorithm=HS256
+
+# URL de la base de datos
+DATABASE_URL=sqlite:///database.db
+
+# Código de registro para mecánicos (cámbialo por uno propio)
+MECHANIC_REGISTRATION_CODE=TU_CODIGO_AQUI
+```
+
+### Generar clave secreta segura
+```bash
+python -c "import secrets; print(secrets.token_urlsafe(32))"
+```
+
+Copia el resultado y úsalo como valor de `secret` en tu `.env`.
+
+---
+
 ## 🚀 Uso 
 ```bash
 # Ejecutar el servidor
@@ -57,10 +83,14 @@ uvicorn app.api:app --reload
 
 La API se encuentra disponible en `http://localhost:8000`
 
+---
+
 ## 📚 Documentación
 
 - **Swagger UI**: http://localhost:8000/docs
 - **ReDoc**: http://localhost:8000/redoc
+
+---
 
 ## 🔑 Autenticación
 
@@ -98,6 +128,8 @@ curl -X GET "http://localhost:8000/mechanic/me" \
   -H "Authorization: Bearer YOUR_TOKEN_HERE"
 ```
 
+---
+
 ## 📊 Ejemplos de uso
 
 ### Crear cliente
@@ -131,6 +163,8 @@ curl -X GET "http://localhost:8000/vehicles/{vehicle_id}/repairs" \
   -H "Authorization: Bearer TOKEN"
 ```
 
+---
+
 ## 🏗️ Arquitectura
 ```
 taller/
@@ -149,6 +183,8 @@ taller/
 └── requirements.txt
 ```
 
+---
+
 ## 🔐 Seguridad
 
 - Contraseñas hasheadas con bcrypt
@@ -156,14 +192,20 @@ taller/
 - Registro protegido con código de invitación
 - Soft delete para preservar integridad referencial
 
+---
+
 ## 🧪 Tests
 ```bash
 pytest
 ```
 
+---
+
 ## 🚀 Deploy
 
 [Instrucciones de deploy - agregar después]
+
+---
 
 ### Notas
 
